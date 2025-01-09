@@ -30,13 +30,13 @@ jobs:
         run: dotnet restore ProjectManagementTool/ProjectManagementTool.sln
 
       - name: Run code formatting check
-        run: dotnet format --verify-no-changes
+        run: dotnet format ProjectManagementTool/ProjectManagementTool.sln --verify-no-changes
 
       - name: Build
         run: dotnet build ProjectManagementTool/ProjectManagementTool.sln --no-restore
 
       - name: Check for vulnerable dependencies
-        run: dotnet list package --vulnerable
+        run: dotnet list package ProjectManagementTool/ProjectManagementTool.sln --vulnerable
 
       - name: Upload build artifacts
         if: success()
