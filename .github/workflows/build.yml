@@ -30,7 +30,7 @@ jobs:
         run: dotnet restore ProjectManagementTool/ProjectManagementTool.sln
 
       - name: Run code formatting check
-        run: dotnet format --check
+        run: dotnet format --verify-no-changes
 
       - name: Build
         run: dotnet build ProjectManagementTool/ProjectManagementTool.sln --no-restore
