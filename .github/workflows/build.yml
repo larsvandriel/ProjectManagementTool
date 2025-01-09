@@ -19,13 +19,13 @@ jobs:
           dotnet-version: '8.0'
 
       - name: Install dependencies
-        run: dotnet restore ProjectManagmentTool/ProjectManagementTool.sln
+        run: dotnet restore ./ProjectManagmentTool/ProjectManagementTool.sln
 
       - name: Build
-        run: dotnet build ProjectManagmentTool/ProjectManagementTool.sln --no-restore
+        run: dotnet build ./ProjectManagmentTool/ProjectManagementTool.sln --no-restore
 
       - name: Test
-        run: dotnet test ProjectManagementTool/ProjectManagementTool.sln --no-build
+        run: dotnet test ./ProjectManagementTool/ProjectManagementTool.sln --no-build
         
   sonarcloud:
     name: Build and analyze
