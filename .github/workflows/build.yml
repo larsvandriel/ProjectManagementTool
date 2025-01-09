@@ -36,7 +36,7 @@ jobs:
         run: dotnet build ProjectManagementTool/ProjectManagementTool.sln --no-restore
 
       - name: Check for vulnerable dependencies
-        run: dotnet list package ProjectManagementTool/ProjectManagementTool.sln --vulnerable
+        run: dotnet list ProjectManagementTool/ProjectManagementTool.sln package --vulnerable
 
       - name: Upload build artifacts
         if: success()
