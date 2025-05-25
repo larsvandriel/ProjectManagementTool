@@ -16,7 +16,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '8.0'
+          dotnet-version: '9.0'
 
       - name: Cache .NET packages
         uses: actions/cache@v3
@@ -58,7 +58,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '8.0'
+          dotnet-version: '9.0'
 
       - name: Test
         run: dotnet test ProjectManagementTool/ProjectManagementTool.sln --no-build
@@ -76,7 +76,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '8.0'
+          dotnet-version: '9.0'
 
       - name: Cache SonarCloud scanner
         id: cache-sonar-scanner
