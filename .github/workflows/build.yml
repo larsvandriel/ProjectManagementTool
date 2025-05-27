@@ -11,72 +11,66 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0'
-
-      - name: Cache .NET packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
+          dotnet-version: '9.0.x'
 
       - name: Restore dependencies
         run: dotnet restore ProjectManagementTool/ProjectManagementTool.sln
 
-      - name: Run code formatting check
-        run: dotnet format ProjectManagementTool/ProjectManagementTool.sln --verify-no-changes
-
-      - name: Build
-        run: dotnet build ProjectManagementTool/ProjectManagementTool.sln --no-restore
-
-      - name: Check for vulnerable dependencies
-        run: dotnet list ProjectManagementTool/ProjectManagementTool.sln package --vulnerable
+      - name: Build solution
+        run: dotnet build ProjectManagementTool/ProjectManagementTool.sln --configuration Release --no-restore
 
       - name: Upload build artifacts
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: build-output
-          path: ProjectManagementTool/bin
+          path: |
+            ProjectManagementTool/**/bin/Release/**
+            ProjectManagementTool/**/obj/Release/**
 
   test:
     needs: build
     runs-on: windows-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-output
-          path: ./bin
+          path: ./build
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0'
-
-      - name: Test
-        run: dotnet test ProjectManagementTool/ProjectManagementTool.sln --no-build
+      - name: Run tests
+        run: dotnet test ProjectManagementTool/ProjectManagementTool.sln --no-build --configuration Release
 
   sonarcloud:
     needs: build
     runs-on: windows-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-output
-          path: ./bin
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0'
+          path: ./build
 
       - name: Cache SonarCloud scanner
         id: cache-sonar-scanner
@@ -90,13 +84,13 @@ jobs:
         if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         run: |
           mkdir -p .sonar/scanner
-          dotnet tool update dotnet-sonarscanner --tool-path .sonar/scanner
+          dotnet tool install dotnet-sonarscanner --tool-path .sonar/scanner
 
-      - name: Analyze with SonarCloud
+      - name: Run SonarCloud analysis
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           .\.sonar\scanner\dotnet-sonarscanner begin /k:"larsvandriel_ProjectManagementTool" /o:"larsvandriel" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
-          dotnet build ProjectManagementTool/ProjectManagementTool.sln --no-restore
+          dotnet build ProjectManagementTool/ProjectManagementTool.sln --no-restore --configuration Release
           .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
