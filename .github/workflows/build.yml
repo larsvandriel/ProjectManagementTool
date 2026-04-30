@@ -8,91 +8,47 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-test-sonar:
     runs-on: windows-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET 9
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
-
-      - name: Restore dependencies
-        run: dotnet restore ProjectManagementTool/ProjectManagementTool.sln
-
-      - name: Build solution
-        run: dotnet build ProjectManagementTool/ProjectManagementTool.sln --configuration Release --no-restore
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-output
-          path: |
-            ProjectManagementTool/**/bin/Release/**
-            ProjectManagementTool/**/obj/Release/**
-
-  test:
-    needs: build
-    runs-on: windows-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup .NET 9
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
-          path: ./build
-
-      - name: Run tests
-        run: dotnet test ProjectManagementTool/ProjectManagementTool.sln --no-build --configuration Release
-
-  sonarcloud:
-    needs: build
-    runs-on: windows-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup .NET 9
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
-          path: ./build
 
       - name: Cache SonarCloud scanner
-        id: cache-sonar-scanner
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .\.sonar\scanner
           key: ${{ runner.os }}-sonar-scanner
-          restore-keys: ${{ runner.os }}-sonar-scanner
 
       - name: Install SonarCloud scanner
-        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         run: |
-          mkdir -p .sonar/scanner
-          dotnet tool install dotnet-sonarscanner --tool-path .sonar/scanner
+          if (!(Test-Path ".\.sonar\scanner\dotnet-sonarscanner.exe")) {
+            dotnet tool install dotnet-sonarscanner --tool-path .sonar/scanner
+          }
 
-      - name: Run SonarCloud analysis
+      - name: SonarCloud begin
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           .\.sonar\scanner\dotnet-sonarscanner begin /k:"larsvandriel_ProjectManagementTool" /o:"larsvandriel" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
-          dotnet restore ProjectManagementTool/ProjectManagementTool.sln
-          dotnet build ProjectManagementTool/ProjectManagementTool.sln --no-incremental --configuration Release
-          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
+      - name: Restore
+        run: dotnet restore ProjectManagementTool/ProjectManagementTool.sln
+
+      - name: Build
+        run: dotnet build ProjectManagementTool/ProjectManagementTool.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test ProjectManagementTool/ProjectManagementTool.sln --configuration Release --no-build
+
+      - name: SonarCloud end
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
